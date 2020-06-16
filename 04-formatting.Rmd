@@ -4,7 +4,9 @@ The greatest strength of the Markdown language is that its simplicity makes it v
 
 > A Markdown-formatted document should be publishable as-is, as plain text, without looking like it's been marked up with tags or formatting instructions.
 >
+> ::: {.flushright}
 > --- [John Gruber](http://daringfireball.net/projects/markdown/syntax#philosophy)
+> :::
 
 However, this comes at a cost of customization. Many features of typical word processors are not directly available in Markdown, e.g.,
 
@@ -25,7 +27,7 @@ The Markdown syntax has no built-in method for changing text colors. We can use 
 
 - For HTML, we can wrap the text in the `<span>` tag and set color with CSS, e.g., `<span style="color: red;">text</span>`.
 
-- For PDF, we can use the LaTeX command `\textcolor{}{}`. This requires the extra LaTeX package **xcolor**, which is included in Pandoc's default LaTeX template.
+- For PDF, we can use the LaTeX command `\textcolor{}{}`. This requires the LaTeX package **xcolor**, which is included in Pandoc's default LaTeX template.
 
 As an example of changing the color in PDF text:
 
@@ -37,7 +39,7 @@ output: pdf_document
 Roses are \textcolor{red}{red}, violets are \textcolor{blue}{blue}.
 ```
 
-If you want to design an R Markdown document for multiple output formats, you should not embed raw HTML or LaTeX code in your document, because they will be ignored in the other output formats (e.g., LaTeX code will be ignored in HTML output). Next, we provide two possible methods to deal with this issue.
+If you want to design an R Markdown document for multiple output formats, you should not embed raw HTML or LaTeX code in your document, because they will be ignored in the other output formats (e.g., LaTeX code will be ignored in HTML output, and HTML tags will be lost in LaTeX output). Next, we provide two possible methods to deal with this issue.
 
 ### Using an R function to write raw HTML or LaTeX code
 
@@ -53,17 +55,17 @@ colorize = function(x, color){
 }
 ```
 
-We can then use the code in an inline R expression `` `r knitr::inline_expr('colorize("some words in red", "red")')` ``, which will create `r colorize("some words in red", "red")` (you may not see the red color if you are reading this book printed in black and white).
+We can then use the code in an inline R expression `` `r knitr::inline_expr('colorize("some words in red", "red")')` ``, which will create `r colorize("some words in red", "red")` (you will not see the red color if you are reading this book printed in black and white).
 
-### Using a Pandoc Lua filter
+### Using a Pandoc Lua filter {#lua-color}
 
-This method may be a little advanced for R users because it involves another programming language, Lua, but it is extremely powerful---you can programmatically modify Markdown elements via [Pandoc's Lua filters.](https://pandoc.org/lua-filters.html) Below is a full example:
+This method may be a little advanced for R users because it involves another programming language, Lua, but it is extremely powerful---you can programmatically modify Markdown elements via Pandoc's Lua filters (see Section \@ref(lua-filters)). Below is a full example:
 
 `r import_example('font-color.Rmd')`
 
-In this example, we implicitly used a Pandoc Markdown extension named `bracketed_spans`, which allows us to write text with attributes, e.g., `[text]{.class attribute="value"}`. The Lua filter defined in the `cat` code chunk^[If you are not familiar with `cat` code chunks, please see Section \@ref(eng-cat).] puts text in `<span style="color: ..."></span>` if the output format is HTML, and in `\textcolor{...}{}` if the output format is LaTeX. The Lua filter is written to a file `color-text.lua`, and enabled through the command-line option `--lua-filter` passed to Pandoc via the `pandoc_args` option of the output formats.
+In this example, we implicitly used a Pandoc Markdown extension named `bracketed_spans`, which allows us to write text with attributes, e.g., `[text]{.class attribute="value"}`. The Lua filter defined in the `cat` code chunk^[If you are not familiar with `cat` code chunks, please see Section \@ref(eng-cat). We used this engine here to conveniently write out a chunk to a `.lua` file, so we do not have to manage the Lua script in a separate file `color-text.lua`. You do not want to use the `cat` engine, you can definitely copy the Lua code and save it to a separate file, instead of embedding the Lua code in a code chunk.] puts text in `<span style="color: ..."></span>` if the output format is HTML, and in `\textcolor{...}{}` if the output format is LaTeX. The Lua filter is written to a file `color-text.lua`, and enabled through the command-line option `--lua-filter` passed to Pandoc via the `pandoc_args` option of the output formats.
 
-Compared to the previous method, the advantage of using the Lua filter is that you can still use Markdown syntax inside the brackets, whereas using the R function `colorize()` in the previous section does not allow Markdown syntax.
+Compared to the previous method, the advantage of using the Lua filter is that you can still use Markdown syntax inside the brackets, whereas using the R function `colorize()` in the previous section does not allow Markdown syntax (e.g., `colorize('**bold**')` will not be bold).
 
 ## Indent text
 
@@ -111,7 +113,7 @@ You can see that the linebreak after "School of Ninja" was ignored.
 
 ## Control the width of text output {#text-width}
 
-Sometimes the text output printed from R code may be too wide. If the output document has a fixed page width (e.g., PDF documents), the text output may exceed the page margin.
+Sometimes the text output printed from R code may be too wide. If the output document has a fixed page width (e.g., PDF documents), the text output may exceed the page margin. See Figure \@ref(fig:wrap-text-1) for an example.
 
 The R global option `width` can be used to control the width of printed text output from some R functions, and you may try a smaller value if the default is too large. This option typically indicates a rough number of characters per line (except East Asian languages). For example:
 
@@ -131,7 +133,7 @@ matrix(runif(100), ncol = 20)
 ```
 ````
 
-Note all R functions respect the `width` option. If this option does not work, your only choice may be to wrap the long lines of text. This is actually the default behavior of the `html_document` output format. If the HTML output format that you are using does not wrap the long lines, you may apply the CSS code below (see Section \@ref(html-css) for how):
+Not all R functions respect the `width` option. If this option does not work, your only choice may be to wrap the long lines of text. This is actually the default behavior of the `html_document` output format. If the HTML output format that you are using does not wrap the long lines, you may apply the CSS code below (see Section \@ref(html-css) for how):
 
 ```css
 pre code {
@@ -161,9 +163,15 @@ In `preamble.tex`, we set an option of the **listings** package:
 
 If you do not like the appearance of code blocks with **listings**, you can set up other **listings** options in `\lstset{}`, e.g., you may change the font family with `basicstyle=\ttfamily`. You can find more information about this package in its documentation: https://ctan.org/pkg/listings.
 
+Figure \@ref(fig:wrap-text-1) shows the default `pdf_document` output that contains wide text, which exceeds the page margin. Figure \@ref(fig:wrap-text-2) shows the PDF output when we use the **listings** package to wrap the text.
+
+```{r, wrap-text, echo=FALSE, fig.cap=c('Normal text output that is too wide.', 'Text output wrapped with the listings package.'), out.width='100%'}
+knitr::include_graphics(c('images/wrap-none.png', 'images/wrap-listings.png'), dpi = NA)
+```
+
 ## Control the size of plots/images {#figure-size}
 
-For plots drawn by R code, their size can be controlled by the chunk option `fig.width` and `fig.height` (in inches). Equivalently, you can use the `fig.dim` option to specify the width and height in a numeric vector of length 2, e.g., `fig.dim = c(8, 6)` means `fig.width = 8` and `fig.height = 6`. These options set the physical size of plots, and you can choose to display a different size in the output using chunk options `out.width` and `out.height`, e.g., `out.width = "50%"`.
+The size of plots made in R can be controlled by the chunk option `fig.width` and `fig.height` (in inches). Equivalently, you can use the `fig.dim` option to specify the width and height in a numeric vector of length 2, e.g., `fig.dim = c(8, 6)` means `fig.width = 8` and `fig.height = 6`. These options set the physical size of plots, and you can choose to display a different size in the output using chunk options `out.width` and `out.height`, e.g., `out.width = "50%"`.
 
 If a plot or an image is not generated from an R code chunk, you can include it in two ways:
 
@@ -189,7 +197,7 @@ We used the width `50%` in the above examples, which means half of the width of 
 
 ## Figure alignment {#fig-align}
 
-The chunk option `fig.align` specifies the alignment of figures. For example, you can center images with `fig.align = 'center'`, or right-align images with `fig.align = 'right'`. This option works for both HTML and LaTeX output, but may not work for other output formats. It works for both plots drawn from R code chunks and external images included via `knitr::include_graphics()`.
+The chunk option `fig.align` specifies the alignment of figures. For example, you can center images with `fig.align = 'center'`, or right-align images with `fig.align = 'right'`. This option works for both HTML and LaTeX output, but may not work for other output formats (such as Word, unfortunately). It works for both plots drawn from R code chunks and external images included via `knitr::include_graphics()`.
 
 ## Line numbers for code blocks {#number-lines}
 
@@ -249,14 +257,16 @@ if (TRUE) {
 ```
 ````
 
+Line numbers are not supported for Word output at the moment.
+
 ## Verbatim code chunks
 
 Typically we write code chunks and inline expressions that we want to be parsed and evaluated by **knitr**. However, if you are trying to write a tutorial on using **knitr**, you may need to generate verbatim code chunk or inline expression that is _not_ parsed by **knitr**, and we want to display the content of the chunk header. 
 
-Unfortunately, we can't wrap the code chunk in another layer of backticks, but instead we must make the code chunk invalid within the source code by inserting  "`` `r ''` `` to the chunk header. This will be evaluated as an inline expression to _an empty string_ by **knitr**. For this example, the following "code chunk" in the source document:
+Unfortunately, we cannot wrap the code chunk in another layer of backticks, but instead we must make the code chunk invalid within the source code by inserting `` `r knitr::inline_expr("''")` `` to the chunk header. This will be evaluated as an inline expression to _an empty string_ by **knitr**. For this example, the following "code chunk" in the source document:
 
 ````{r echo = FALSE, comment = NA}
-cat("`r ''````{r, eval=TRUE}
+cat("```{r, eval=TRUE}`r ''`
 1 + 1
 ```")
 ````
@@ -282,7 +292,7 @@ Why four backticks? That is because you have to use at least N+1 backticks to wr
 
 ### Show a verbatim inline expression
 
-There are multiple ways to show a verbatim inline expression. I mentioned this trick for R Markdown documents in the FAQ:
+There are multiple ways to show a verbatim inline expression. The first way is to break the inline expression after `` `r``, e.g.,
 
 ```md
 This will show a verbatim inline R expression `` `r
@@ -300,6 +310,8 @@ Another way to show a verbatim inline R expression is to wrap the R code in `kni
 This will show a verbatim inline R expression
 `` `r knitr::inline_expr('knitr::inline_expr("1+1")')` `` in the output.
 ```
+
+I'd recommend the second way, because the first way is more or less a hack taking advantage of the Markdown syntax and **knitr**'s parser.
 
 ## Multi-column layout
 

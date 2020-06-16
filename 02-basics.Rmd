@@ -30,7 +30,7 @@ Note that not all R Markdown documents are eventually compiled through Pandoc. T
 
 - The **xaringan** package [@R-xaringan] passes the `.md` output to a JavaScript library, which renders the Markdown content in the web browser.
 
-- The **blogdown** package [@R-blogdown] supports the `.Rmarkdown` document format, which is knitted to `.markdown`, and this Markdown document is usually rendered to HTML by a site generator named Hugo.
+- The **blogdown** package [@R-blogdown] supports the `.Rmarkdown` document format, which is knitted to `.markdown`, and this Markdown document is usually rendered to HTML by an external site generator.
 
 ## Code chunks and inline R code {#r-code}
 
@@ -67,7 +67,7 @@ If you want granular control over the elements in the report, below are a few sy
 
 - R code of the form `{{ code }}` is translated to an inline R expression in R Markdown. Please note that `{{ code }}` must be on its own line.
 
-- The YAML frontmatter can be written in the beginning of the R script in roxygen comments, too.
+- The YAML frontmatter can be written in the beginning of the R script in roxygen comments, too. Please watch out the indentation in YAML fields. It is very important. If you omit the indentation, the data structure expressed in your YAML will be different and incorrect. For example, the field `keep_tex: true` should be indented for two more spaces under `pdf_document` in the example below.
 
 - Any text between `/*` and `*/` will be ignored (i.e., they are treated as true comments).
 
@@ -94,25 +94,24 @@ When you want to extract all R code from an R Markdown document, you can call th
 If we call `knitr::purl("purl.Rmd")`, it generates the following R script (with the filename `purl.R` by default):
 
 ```{r, class.output='r', comment='', echo=FALSE}
-xfun::raw_string(
-  knitr::purl(text = xfun::read_utf8('examples/purl.Rmd'), quiet = TRUE)
-)
+purl2 = function(file, ...) {
+  xfun::raw_string(xfun::Rscript_call(
+    knitr::purl, list(text = xfun::read_utf8(file), quiet = TRUE, ...)
+  ))
+}
+purl2('examples/purl.Rmd')
 ```
 
 The above R script contains the chunk options in a comment. If you want pure R code, you may call `knitr::purl()` with the argument `documentation = 0`, which will generate the R script below:
 
 ```{r, class.output='r', comment='', echo=FALSE}
-xfun::raw_string(
-  knitr::purl(text = xfun::read_utf8('examples/purl.Rmd'), quiet = TRUE, documentation = 0)
-)
+purl2('examples/purl.Rmd', documentation = 0)
 ```
 
 If you want to retain all the text, you may use the argument `documentation = 2`, which generates the R script below:
 
 ```{r, class.output='r', comment='', echo=FALSE}
-xfun::raw_string(
-  knitr::purl(text = xfun::read_utf8('examples/purl.Rmd'), quiet = TRUE, documentation = 2)
-)
+purl2('examples/purl.Rmd', documentation = 2)
 ```
 
 Note that code chunks with the option `purl = FALSE` will be excluded in the R script.
